@@ -42,21 +42,27 @@ def clean(s):
 
 
 def get_embedding(text):
-    features = bc_client.encode(text)
-    return features
+    features = bc_client.encode([text])
+    return features[0]
 
 
 def main(fn, on):
     with open(fn, 'r') as f, open(on, 'w') as w:
         all_labels = set()
         clean_data = list()
+        i = 0
         for line in f.readlines():
+            if i & 0xff == 0:
+                print(i)
+            i += 1
             line = json.loads(line)
             text = line['text']
             labels = line['labels']
             text = clean(text)
-            vec = get_vec(text)
-            clean_data.append([vec, labels])
+            if text:
+                vec = get_embedding(text)
+                clean_data.append([vec, labels])
+                all_labels.update(labels)
         num_classes = len(all_labels)
         all_labels = list(all_labels)
         idx = dict(zip(all_labels, range(num_classes)))
